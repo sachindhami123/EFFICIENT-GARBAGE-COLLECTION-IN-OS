@@ -1,0 +1,63 @@
+import gc
+import psutil
+import matplotlib.pyplot as plt
+import weakref
+import time
+
+class Object:
+    def __init__(self, name):
+        self.name = name
+
+def reference_counting_demo():
+    obj = Object("Reference Counting Example")  # Object created
+    ref = obj  # Another reference
+    del obj  # Still exists because 'ref' holds it
+    del ref  # Now deleted as no references exist
+    
+def cyclic_reference_demo():
+    class Node:
+        def __init__(self, value):
+            self.value = value
+            self.ref = None
+    
+    a = Node("A")
+    b = Node("B")
+    a.ref = b
+    b.ref = a  # Creates a circular reference
+    
+    del a, b  # Objects persist due to circular reference
+    gc.collect()  # Mark-and-Sweep removes them
+
+def measure_memory():
+    return psutil.Process().memory_info().rss / (1024 * 1024)  # Memory in MB
+
+def plot_memory_usage():
+    memory_usage = []
+    timestamps = []
+    
+    for i in range(10):
+        obj_list = [Object(f"Object-{j}") for j in range(10000)]  # Create many objects
+        memory_usage.append(measure_memory())
+        timestamps.append(i)
+        del obj_list
+        gc.collect()
+        time.sleep(0.5)  # Simulate workload
+    
+    plt.plot(timestamps, memory_usage, marker='o', linestyle='-', color='b')
+    plt.xlabel("Time (Iterations)")
+    plt.ylabel("Memory Usage (MB)")
+    plt.title("Garbage Collection Impact on Memory Usage")
+    plt.show()
+
+def generational_gc_demo():
+    gc.collect(generation=0)  # Collect young generation
+    gc.collect(generation=1)  # Collect middle generation
+    gc.collect(generation=2)  # Collect old generation
+
+if __name__ == "__main__":
+    print("Running Garbage Collection Demonstration...")
+    reference_counting_demo()
+    cyclic_reference_demo()
+    generational_gc_demo()
+    plot_memory_usage()
+    print("Garbage Collection Completed.")
